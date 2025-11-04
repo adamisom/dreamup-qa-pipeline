@@ -1,0 +1,20 @@
+{
+  "name": "dreamup-qa-pipeline",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "tsx index.ts",
+    "demo": "tsx demo.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.922.0",
+    "@aws-sdk/s3-request-presigner": "^3.922.0",
+    "@browserbasehq/stagehand": "latest",
+    "crypto": "^1.0.1",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.6",
+    "typescript": "^5.0.0"
+  }
+}

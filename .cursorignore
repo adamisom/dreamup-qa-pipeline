@@ -1,0 +1,44 @@
+# Dependencies (too large for context)
+node_modules/
+package-lock.json
+
+# Environment files (sensitive)
+.env*
+
+# Build outputs
+dist/
+build/
+out/
+*.tsbuildinfo
+
+# Logs (not useful for context)
+logs/
+*.log
+npm-debug.log*
+
+# Test artifacts and media
+test-results/
+screenshots/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+
+# Temporary files
+.tmp/
+temp/
+*.temp
+*.tmp
+
+# OS and IDE files
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Large data files
+coverage/
+.nyc_output/
+
