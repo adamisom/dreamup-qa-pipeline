@@ -26,43 +26,18 @@ API Gateway (or Direct Invoke)
 
 ## Handler Implementation
 
-Create `handler.ts` in your project root:
+The `handler.ts` file is already created in the project root. It handles:
 
+- ✅ API Gateway events (POST requests)
+- ✅ CORS headers for browser access
+- ✅ Request validation (gameUrl required)
+- ✅ Error handling with proper HTTP status codes
+- ✅ JSON parsing and response formatting
+
+**Usage:**
 ```typescript
-import { APIGatewayProxyHandler } from 'aws-lambda';
-import { runQATest } from './src/qa-agent';
-
-export const handler: APIGatewayProxyHandler = async (event) => {
-  try {
-    // Parse input
-    const body = JSON.parse(event.body || '{}');
-    const gameUrl = body.gameUrl;
-
-    if (!gameUrl) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'gameUrl is required' }),
-      };
-    }
-
-    // Run QA test (same code as CLI)
-    const result = await runQATest(gameUrl);
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify(result),
-    };
-  } catch (error) {
-    console.error('QA test failed:', error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ 
-        error: 'QA test failed', 
-        message: error.message 
-      }),
-    };
-  }
-};
+// Lambda handler is ready at handler.ts
+// Deploy with: serverless deploy
 ```
 
 ## Deployment Options
