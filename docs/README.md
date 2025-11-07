@@ -24,6 +24,7 @@ serverless deploy
 ### 🚀 **For Developers**
 - **[Quick Reference](docs/misc/QUICK_REFERENCE.md)** - Essential info for daily coding (156 lines)
 - **[Setup Guide](docs/misc/SETUP_GUIDE.md)** - Environment setup + API verification 
+- **[Testing Guide](docs/TESTING_GUIDE.md)** - Manual testing procedures + smoke tests
 - **[Implementation Tasks](docs/IMPLEMENTATION_TASKS.md)** - 27 tasks broken into 1-4 hour chunks
 
 ### 🏗 **For Architecture**  
