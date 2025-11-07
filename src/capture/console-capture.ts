@@ -3,7 +3,7 @@
 
 import { StagehandClient } from '../browser/stagehand-client.js';
 import { S3StorageClient } from '../storage/s3-client.js';
-import { createHash } from 'node:crypto';
+import { generateGameId } from '../utils/game-id.js';
 import { getErrorMessage } from '../utils/errors.js';
 
 export interface ConsoleLog {
@@ -30,7 +30,7 @@ export class ConsoleCapture {
 
   constructor(stagehandClient: StagehandClient, gameUrl: string) {
     this.stagehandClient = stagehandClient;
-    this.gameId = createHash('md5').update(gameUrl).digest('hex');
+    this.gameId = generateGameId(gameUrl);
     this.s3Client = new S3StorageClient();
   }
 
@@ -45,9 +45,12 @@ export class ConsoleCapture {
     try {
       const page = this.stagehandClient.getPage() as any; // Stagehand page type doesn't expose .on() in types
       
+      if (!page.on) {
+        throw new Error('Page does not support event listeners');
+      }
+
       // Listen to console events
-      if (page.on) {
-        page.on('console', (msg: any) => {
+      page.on('console', (msg: any) => {
         try {
           const level = this.mapConsoleLevel(msg.type());
           const text = msg.text();
@@ -63,20 +66,17 @@ export class ConsoleCapture {
           // Silently handle console capture errors to avoid breaking the test
           console.error(`Error capturing console message: ${getErrorMessage(err)}`);
         }
-        });
-      }
+      });
 
       // Also capture page errors
-      if (page.on) {
-        page.on('pageerror', (error: Error) => {
-          this.logs.push({
-            level: 'error',
-            message: error.message,
-            timestamp: new Date().toISOString(),
-            stack: error.stack,
-          });
+      page.on('pageerror', (error: Error) => {
+        this.logs.push({
+          level: 'error',
+          message: error.message,
+          timestamp: new Date().toISOString(),
+          stack: error.stack,
         });
-      }
+      });
 
       this.capturing = true;
     } catch (error) {
@@ -104,22 +104,27 @@ export class ConsoleCapture {
   }
 
   /**
+   * Noise patterns to filter from console logs
+   * These are common browser extension and analytics messages
+   */
+  private static readonly NOISE_PATTERNS = [
+    /^favicon/i,
+    /^extension/i,
+    /^chrome-extension/i,
+    /^moz-extension/i,
+    /^analytics/i,
+    /^gtag/i,
+    /^ga\(/i,
+    /^google/i,
+    /^facebook/i,
+    /^fbq\(/i,
+  ];
+
+  /**
    * Filter logs for game-relevant content
    * Removes noise like browser extensions, analytics, etc.
    */
   private filterRelevantLogs(logs: ConsoleLog[]): ConsoleLog[] {
-    const noisePatterns = [
-      /^favicon/i,
-      /^extension/i,
-      /^chrome-extension/i,
-      /^moz-extension/i,
-      /^analytics/i,
-      /^gtag/i,
-      /^ga\(/i,
-      /^google/i,
-      /^facebook/i,
-      /^fbq\(/i,
-    ];
 
     return logs.filter(log => {
       // Keep all errors and warnings
@@ -128,7 +133,7 @@ export class ConsoleCapture {
       }
 
       // Filter out noise from info/log messages
-      return !noisePatterns.some(pattern => pattern.test(log.message));
+      return !ConsoleCapture.NOISE_PATTERNS.some(pattern => pattern.test(log.message));
     });
   }
 
@@ -151,9 +156,7 @@ export class ConsoleCapture {
         errorCount: filteredLogs.filter(l => l.level === 'error').length,
         warningCount: filteredLogs.filter(l => l.level === 'warn').length,
         totalCount: filteredLogs.length,
-        filteredLogs: filteredLogs.map(l => 
-          `[${l.level.toUpperCase()}] ${l.message}${l.stack ? `\n  at ${l.stack}` : ''}`
-        ).join('\n'),
+        filteredLogs: this.formatLogsAsString(filteredLogs),
       };
 
       // Generate S3 key
@@ -174,12 +177,21 @@ export class ConsoleCapture {
   }
 
   /**
+   * Format logs as a string
+   * @param logs - Array of console logs to format
+   * @returns Formatted string representation
+   */
+  private formatLogsAsString(logs: ConsoleLog[]): string {
+    return logs
+      .map(l => `[${l.level.toUpperCase()}] ${l.message}${l.stack ? `\n  at ${l.stack}` : ''}`)
+      .join('\n');
+  }
+
+  /**
    * Get all captured logs as a string (for evaluator)
    */
   getLogsAsString(): string {
-    return this.logs
-      .map(l => `[${l.level.toUpperCase()}] ${l.message}${l.stack ? `\n  at ${l.stack}` : ''}`)
-      .join('\n');
+    return this.formatLogsAsString(this.logs);
   }
 
   /**

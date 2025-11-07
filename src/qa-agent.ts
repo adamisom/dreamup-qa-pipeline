@@ -13,6 +13,7 @@ import { createErrorResult, createFailResult } from './utils/results.js';
 import { sleep, DurationTracker } from './utils/timing.js';
 import { getErrorMessage } from './utils/errors.js';
 import { ScreenshotCollection } from './utils/screenshots.js';
+import { generateConsoleReportSafely } from './utils/console-reports.js';
 import type { BasicQAResult } from './schemas/types.js';
 
 /**
@@ -87,15 +88,9 @@ export async function runQATest(gameUrl: string): Promise<BasicQAResult> {
 
     // Generate console log report
     console.log('📝 Generating console log report...');
-    let consoleLogsUrl: string | undefined;
-    try {
-      const logsUrl = await consoleCapture.generateReport();
-      if (logsUrl) {
-        consoleLogsUrl = logsUrl;
-        console.log(`   📄 Console logs: ${logsUrl.substring(0, 80)}...`);
-      }
-    } catch (error) {
-      console.error(`   ⚠️  Failed to generate console log report: ${getErrorMessage(error)}`);
+    const consoleLogsUrl = await generateConsoleReportSafely(consoleCapture);
+    if (consoleLogsUrl) {
+      console.log(`   📄 Console logs: ${consoleLogsUrl.substring(0, 80)}...`);
     }
 
     // Evaluate results

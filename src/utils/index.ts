@@ -8,5 +8,8 @@ export * from './timing.js';
 export * from './validation.js';
 export * from './results.js';
 export * from './screenshots.js';
+export * from './game-id.js';
+export * from './http-responses.js';
+export * from './console-reports.js';
 
 

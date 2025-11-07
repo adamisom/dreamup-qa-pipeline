@@ -25,27 +25,33 @@ export class S3StorageClient {
   }
 
   /**
-   * Upload a screenshot buffer to S3
-   * @param key - S3 object key (path)
-   * @param buffer - Screenshot image buffer
-   * @param contentType - MIME type (default: image/png)
+   * Generic S3 upload with retry logic
+   * @param key - S3 object key
+   * @param body - Body content (Buffer or string)
+   * @param contentType - MIME type
+   * @param metadata - Optional metadata
+   * @param errorMessage - Custom error message prefix
    * @returns Promise<string> - S3 URL
    */
-  async uploadScreenshot(key: string, buffer: Buffer, contentType = 'image/png'): Promise<string> {
+  private async uploadObject(
+    key: string,
+    body: Buffer | string,
+    contentType: string,
+    metadata: Record<string, string> = {},
+    errorMessage: string
+  ): Promise<string> {
     const command = new PutObjectCommand({
       Bucket: this.bucketName,
       Key: key,
-      Body: buffer,
+      Body: body,
       ContentType: contentType,
-      // Add metadata for organization
       Metadata: {
         uploadedAt: new Date().toISOString(),
-        contentType: contentType
-      }
+        ...metadata,
+      },
     });
 
     try {
-      // Use retry logic for uploads
       await withRetry(
         async () => {
           await this.client.send(command);
@@ -54,8 +60,25 @@ export class S3StorageClient {
       );
       return this.getS3Url(key);
     } catch (error) {
-      throw new Error(`Failed to upload screenshot: ${getErrorMessage(error)}`);
+      throw new Error(`${errorMessage}: ${getErrorMessage(error)}`);
     }
+  }
+
+  /**
+   * Upload a screenshot buffer to S3
+   * @param key - S3 object key (path)
+   * @param buffer - Screenshot image buffer
+   * @param contentType - MIME type (default: image/png)
+   * @returns Promise<string> - S3 URL
+   */
+  async uploadScreenshot(key: string, buffer: Buffer, contentType = 'image/png'): Promise<string> {
+    return this.uploadObject(
+      key,
+      buffer,
+      contentType,
+      { contentType },
+      'Failed to upload screenshot'
+    );
   }
 
   /**
@@ -85,29 +108,13 @@ export class S3StorageClient {
    * @returns Promise<string> - S3 URL
    */
   async uploadLogs(key: string, logs: any): Promise<string> {
-    const command = new PutObjectCommand({
-      Bucket: this.bucketName,
-      Key: key,
-      Body: JSON.stringify(logs, null, 2),
-      ContentType: 'application/json',
-      Metadata: {
-        uploadedAt: new Date().toISOString(),
-        logType: 'console'
-      }
-    });
-
-    try {
-      // Use retry logic for uploads
-      await withRetry(
-        async () => {
-          await this.client.send(command);
-        },
-        { maxRetries: 3, backoffMs: 1000 }
-      );
-      return this.getS3Url(key);
-    } catch (error) {
-      throw new Error(`Failed to upload logs: ${getErrorMessage(error)}`);
-    }
+    return this.uploadObject(
+      key,
+      JSON.stringify(logs, null, 2),
+      'application/json',
+      { logType: 'console' },
+      'Failed to upload logs'
+    );
   }
 
   /**

@@ -5,8 +5,8 @@ import { StagehandClient } from '../browser/stagehand-client.js';
 import { S3StorageClient } from '../storage/s3-client.js';
 import { Config } from '../utils/config.js';
 import { getErrorMessage } from '../utils/errors.js';
+import { generateGameId } from '../utils/game-id.js';
 import type { Screenshot } from '../schemas/types.js';
-import { createHash } from 'node:crypto';
 
 export class ScreenshotManager {
   private lastScreenshotTime = 0;
@@ -18,8 +18,7 @@ export class ScreenshotManager {
   constructor(stagehandClient: StagehandClient, gameUrl: string) {
     this.stagehandClient = stagehandClient;
     this.s3Client = new S3StorageClient();
-    // Generate game ID from URL hash
-    this.gameId = createHash('md5').update(gameUrl).digest('hex');
+    this.gameId = generateGameId(gameUrl);
   }
 
   /**

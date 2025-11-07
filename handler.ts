@@ -4,6 +4,12 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { runQATest } from './src/qa-agent.js';
 import { getErrorMessage } from './src/utils/errors.js';
+import {
+  getCorsHeaders,
+  createSuccessResponse,
+  createErrorResponse,
+  createCorsPreflightResponse,
+} from './src/utils/http-responses.js';
 
 /**
  * Lambda handler for API Gateway
@@ -12,32 +18,14 @@ import { getErrorMessage } from './src/utils/errors.js';
 export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
-  // Set CORS headers
-  const headers = {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  };
-
   // Handle OPTIONS request for CORS preflight
   if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers,
-      body: '',
-    };
+    return createCorsPreflightResponse();
   }
 
   // Only allow POST requests
   if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      headers,
-      body: JSON.stringify({
-        error: 'Method not allowed. Use POST.',
-      }),
-    };
+    return createErrorResponse(405, 'Method not allowed. Use POST.');
   }
 
   try {
@@ -49,47 +37,34 @@ export const handler = async (
       gameUrl = body.gameUrl;
       
       if (!gameUrl || typeof gameUrl !== 'string') {
-        return {
-          statusCode: 400,
-          headers,
-          body: JSON.stringify({
-            error: 'Missing or invalid gameUrl in request body',
-            example: { gameUrl: 'https://example.com' },
-          }),
-        };
+        return createErrorResponse(
+          400,
+          'Missing or invalid gameUrl in request body',
+          JSON.stringify({ example: { gameUrl: 'https://example.com' } })
+        );
       }
     } catch (parseError) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({
-          error: 'Invalid JSON in request body',
-          details: getErrorMessage(parseError),
-        }),
-      };
+      return createErrorResponse(
+        400,
+        'Invalid JSON in request body',
+        getErrorMessage(parseError)
+      );
     }
 
     // Run QA test
     const result = await runQATest(gameUrl);
 
     // Return result
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify(result),
-    };
+    return createSuccessResponse(result);
   } catch (error) {
     // Handle unexpected errors
     console.error('Lambda handler error:', error);
     
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({
-        error: 'Internal server error',
-        message: getErrorMessage(error),
-      }),
-    };
+    return createErrorResponse(
+      500,
+      'Internal server error',
+      getErrorMessage(error)
+    );
   }
 };
 
