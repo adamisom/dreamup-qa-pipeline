@@ -1,7 +1,7 @@
 // Screenshot and console log capture module
 // Handles evidence collection during game testing
 
-export * from './screenshot-manager';
-export * from './console-capture';
+export * from './screenshot-manager.js';
+// export * from './console-capture.js'; // Phase 3 - not yet implemented
 
 

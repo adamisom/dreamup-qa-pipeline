@@ -106,6 +106,13 @@ export class S3StorageClient {
   }
 
   /**
+   * Get the bucket name (for external access)
+   */
+  getBucketName(): string {
+    return this.bucketName;
+  }
+
+  /**
    * Generate organized key path for screenshots
    * @param gameId - Game identifier (MD5 hash of URL)
    * @param timestamp - ISO timestamp
