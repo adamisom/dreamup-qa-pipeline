@@ -9,30 +9,30 @@
 npx create-browser-app dreamup-qa-pipeline
 cd dreamup-qa-pipeline
 
-# 2. Configure APIs (see docs/SETUP_GUIDE.md)
+# 2. Configure APIs (see docs/misc/SETUP_GUIDE.md)
 # Add API keys to .env file
 
 # 3. Test locally
 npm run qa https://playtictactoe.org
 
-# 4. Deploy to Lambda (see docs/DEPLOYMENT_GUIDE.md)  
+# 4. Deploy to Lambda (see docs/misc/DEPLOYMENT_GUIDE.md)  
 serverless deploy
 ```
 
 ## 📋 Documentation Structure
 
 ### 🚀 **For Developers**
-- **[Quick Reference](docs/QUICK_REFERENCE.md)** - Essential info for daily coding (156 lines)
-- **[Setup Guide](docs/SETUP_GUIDE.md)** - Environment setup + API verification 
+- **[Quick Reference](docs/misc/QUICK_REFERENCE.md)** - Essential info for daily coding (156 lines)
+- **[Setup Guide](docs/misc/SETUP_GUIDE.md)** - Environment setup + API verification 
 - **[Implementation Tasks](docs/IMPLEMENTATION_TASKS.md)** - 27 tasks broken into 1-4 hour chunks
 
 ### 🏗 **For Architecture**  
-- **[Architecture Deep Dive](docs/ARCHITECTURE_DEEP_DIVE.md)** - System design + technical decisions
-- **[Schemas Reference](docs/SCHEMAS_REFERENCE.md)** - Complete Zod type definitions
+- **[Architecture](docs/ARCHITECTURE.md)** - System design + technical decisions
+- **[Schemas Reference](docs/misc/SCHEMAS_REFERENCE.md)** - Complete Zod type definitions
 
 ### 🚀 **For Deployment**
-- **[Deployment Guide](docs/DEPLOYMENT_GUIDE.md)** - Production Lambda deployment
-- **[Complete PRD Reference](docs/COMPLETE_PRD_REFERENCE.md)** - Full specification (3,700+ lines)
+- **[Deployment Guide](docs/misc/DEPLOYMENT_GUIDE.md)** - Production Lambda deployment
+- **[Complete PRD Reference](docs/PRD.md)** - Full specification (3,700+ lines)
 
 ## 🎯 What This System Does
 
@@ -71,14 +71,14 @@ Browser Game URL → Screenshots → Claude Analysis → JSON QA Report
 ## 🔧 Development Workflow
 
 ### For AI Agents (like Claude in Cursor):
-1. **Pin [Quick Reference](docs/QUICK_REFERENCE.md)** - Keep open during coding
+1. **Pin [Quick Reference](docs/misc/QUICK_REFERENCE.md)** - Keep open during coding
 2. **Work task-by-task** - Use [Implementation Tasks](docs/IMPLEMENTATION_TASKS.md)
 3. **Reference as needed** - Full PRD available for deeper questions
 
 ### For Human Developers:
-1. **Start with [Setup Guide](docs/SETUP_GUIDE.md)** - Get environment ready
+1. **Start with [Setup Guide](docs/misc/SETUP_GUIDE.md)** - Get environment ready
 2. **Follow [Implementation Tasks](docs/IMPLEMENTATION_TASKS.md)** - 27 specific tasks
-3. **Deploy with [Deployment Guide](docs/DEPLOYMENT_GUIDE.md)** - Lambda production
+3. **Deploy with [Deployment Guide](docs/misc/DEPLOYMENT_GUIDE.md)** - Lambda production
 
 ## 📈 Success Metrics
 
@@ -107,9 +107,9 @@ Browser Game URL → Screenshots → Claude Analysis → JSON QA Report
 ## 📞 Support
 
 1. Check relevant doc in `docs/` folder
-2. Review [Quick Reference](docs/QUICK_REFERENCE.md) for common issues
-3. See [Complete PRD](docs/COMPLETE_PRD_REFERENCE.md) for comprehensive details
+2. Review [Quick Reference](docs/misc/QUICK_REFERENCE.md) for common issues
+3. See [Complete PRD](docs/PRD.md) for comprehensive details
 
 ---
 
-**🎯 Start Here**: [Setup Guide](docs/SETUP_GUIDE.md) → [Implementation Tasks](docs/IMPLEMENTATION_TASKS.md) → [Deployment Guide](docs/DEPLOYMENT_GUIDE.md)
+**🎯 Start Here**: [Setup Guide](docs/misc/SETUP_GUIDE.md) → [Implementation Tasks](docs/IMPLEMENTATION_TASKS.md) → [Deployment Guide](docs/misc/DEPLOYMENT_GUIDE.md)
