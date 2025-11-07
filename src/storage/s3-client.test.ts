@@ -41,16 +41,7 @@ vi.mock('../utils/retry.js', () => ({
 }));
 
 describe('S3StorageClient', () => {
-  const mockBucketName = 'test-bucket';
-
-  describe('constructor and getBucketName', () => {
-    it('should initialize with bucket name from config', () => {
-      const client = new S3StorageClient();
-      expect(client.getBucketName()).toBe(mockBucketName);
-    });
-  });
-
-  describe('generateScreenshotKey', () => {
+  describe('generateScreenshotKey (static method)', () => {
     it('should generate correct key format', () => {
       const gameId = 'abc123def456';
       const timestamp = '2024-01-01T00:00:00.000Z';
