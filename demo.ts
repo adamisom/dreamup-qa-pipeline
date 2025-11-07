@@ -3,8 +3,8 @@
 
 import "dotenv/config";
 import { Stagehand } from "@browserbasehq/stagehand";
-import { Config } from "./src/utils/config";
-import { S3StorageClient } from "./src/storage/s3-client";
+import { Config } from "./src/utils/config.js";
+import { S3StorageClient } from "./src/storage/s3-client.js";
 import { createHash } from 'node:crypto';
 
 async function runDemo() {
@@ -97,7 +97,7 @@ async function runDemo() {
       console.log(`   Result: ${JSON.stringify(extractResult, null, 2)}`);
     } catch (error) {
       console.log("⚠️  AI extraction needs model configuration (will fix in Phase 2)");
-      console.log(`   Error: ${error.message}`);
+      console.log(`   Error: ${error instanceof Error ? error.message : String(error)}`);
     }
     
     // Clean up browser session
@@ -115,8 +115,10 @@ async function runDemo() {
     console.log("\n🚀 Ready to build the full QA pipeline!");
     
   } catch (error) {
-    console.error("❌ Demo failed:", error.message);
-    console.error(error.stack);
+    console.error("❌ Demo failed:", error instanceof Error ? error.message : String(error));
+    if (error instanceof Error) {
+      console.error(error.stack);
+    }
   }
 }
 

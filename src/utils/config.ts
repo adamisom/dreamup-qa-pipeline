@@ -1,7 +1,7 @@
 // Environment configuration utility
 // Loads and validates environment variables with sensible defaults
 
-import { QAConfig } from '../schemas/types';
+import { QAConfig } from '../schemas/types.js';
 
 export class Config {
   /**
@@ -61,4 +61,5 @@ export class Config {
     };
   }
 }
+
 

@@ -3,7 +3,7 @@
 
 import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { Config } from '../utils/config';
+import { Config } from '../utils/config.js';
 
 export class S3StorageClient {
   private client: S3Client;
@@ -116,4 +116,5 @@ export class S3StorageClient {
     return `${gameId}/${timestamp}/${filename}`;
   }
 }
+
 
