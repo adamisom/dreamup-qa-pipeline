@@ -4,6 +4,7 @@
 import "dotenv/config";
 import { StagehandClient } from './browser/stagehand-client.js';
 import { ScreenshotManager } from './capture/screenshot-manager.js';
+import { ConsoleCapture } from './capture/console-capture.js';
 import { GameLoader } from './browser/game-loader.js';
 import { SimpleEvaluator } from './llm/simple-evaluator.js';
 import { Config } from './utils/config.js';
@@ -51,6 +52,11 @@ export async function runQATest(gameUrl: string): Promise<BasicQAResult> {
     // Create screenshot manager
     const screenshotManager = new ScreenshotManager(stagehandClient, gameUrl);
 
+    // Create console capture
+    const consoleCapture = new ConsoleCapture(stagehandClient, gameUrl);
+    await consoleCapture.startCapturing();
+    console.log('📝 Console capture started');
+
     // Create game loader
     const gameLoader = new GameLoader(stagehandClient, screenshotManager);
 
@@ -58,7 +64,7 @@ export async function runQATest(gameUrl: string): Promise<BasicQAResult> {
     console.log('🌐 Loading game...');
     const loadResult = await gameLoader.loadGame(gameUrl);
 
-    screenshots.add(loadResult.screenshot);
+    screenshots.add(loadResult.screenshot || null);
 
     if (!loadResult.success) {
       console.log(`❌ Game load failed: ${loadResult.error}`);
@@ -79,14 +85,34 @@ export async function runQATest(gameUrl: string): Promise<BasicQAResult> {
     const additionalScreenshot = await screenshotManager.captureScreenshot('post_load');
     screenshots.add(additionalScreenshot);
 
+    // Generate console log report
+    console.log('📝 Generating console log report...');
+    let consoleLogsUrl: string | undefined;
+    try {
+      const logsUrl = await consoleCapture.generateReport();
+      if (logsUrl) {
+        consoleLogsUrl = logsUrl;
+        console.log(`   📄 Console logs: ${logsUrl.substring(0, 80)}...`);
+      }
+    } catch (error) {
+      console.error(`   ⚠️  Failed to generate console log report: ${getErrorMessage(error)}`);
+    }
+
     // Evaluate results
     console.log('🔍 Evaluating results...');
     const evaluator = new SimpleEvaluator();
+    const logsString = consoleCapture.getLogsAsString();
     const result = evaluator.evaluate(
       screenshots.getAll(),
       gameUrl,
-      duration.elapsed()
+      duration.elapsed(),
+      logsString || undefined
     );
+
+    // Add console logs URL to result
+    if (consoleLogsUrl) {
+      result.consoleLogsUrl = consoleLogsUrl;
+    }
 
     console.log(`✅ Test complete: ${result.status.toUpperCase()}`);
     return result;

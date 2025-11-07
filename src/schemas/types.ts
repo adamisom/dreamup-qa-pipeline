@@ -19,6 +19,7 @@ export interface BasicQAResult {
   screenshots: Screenshot[];
   duration: number;
   error?: string;
+  consoleLogsUrl?: string; // S3 presigned URL for console logs
 }
 
 // Additional utility types for development

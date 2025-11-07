@@ -4,6 +4,8 @@
 import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Config } from '../utils/config.js';
+import { withRetry } from '../utils/retry.js';
+import { getErrorMessage } from '../utils/errors.js';
 
 export class S3StorageClient {
   private client: S3Client;
@@ -43,10 +45,16 @@ export class S3StorageClient {
     });
 
     try {
-      await this.client.send(command);
+      // Use retry logic for uploads
+      await withRetry(
+        async () => {
+          await this.client.send(command);
+        },
+        { maxRetries: 3, backoffMs: 1000 }
+      );
       return this.getS3Url(key);
     } catch (error) {
-      throw new Error(`Failed to upload screenshot: ${error}`);
+      throw new Error(`Failed to upload screenshot: ${getErrorMessage(error)}`);
     }
   }
 
@@ -89,10 +97,16 @@ export class S3StorageClient {
     });
 
     try {
-      await this.client.send(command);
+      // Use retry logic for uploads
+      await withRetry(
+        async () => {
+          await this.client.send(command);
+        },
+        { maxRetries: 3, backoffMs: 1000 }
+      );
       return this.getS3Url(key);
     } catch (error) {
-      throw new Error(`Failed to upload logs: ${error}`);
+      throw new Error(`Failed to upload logs: ${getErrorMessage(error)}`);
     }
   }
 

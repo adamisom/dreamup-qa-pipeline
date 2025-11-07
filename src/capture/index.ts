@@ -2,6 +2,6 @@
 // Handles evidence collection during game testing
 
 export * from './screenshot-manager.js';
-// export * from './console-capture.js'; // Phase 3 - not yet implemented
+export * from './console-capture.js';
 
 
