@@ -5,7 +5,6 @@ import { Stagehand } from "@browserbasehq/stagehand";
 import { Config } from '../utils/config.js';
 import { sleep } from '../utils/timing.js';
 import { getErrorMessage } from '../utils/errors.js';
-import type { V3Context } from "@browserbasehq/stagehand";
 
 export class StagehandClient {
   private stagehand: Stagehand | null = null;
@@ -26,7 +25,6 @@ export class StagehandClient {
       apiKey: env.browserbaseApiKey,
       projectId: env.browserbaseProjectId,
       model: "anthropic/claude-3-5-sonnet-20241022",
-      modelApiKey: env.anthropicApiKey,
       verbose: 1,
     });
 
@@ -47,7 +45,7 @@ export class StagehandClient {
   /**
    * Get the browser context
    */
-  getContext(): V3Context {
+  getContext() {
     return this.getStagehand().context;
   }
 
@@ -72,7 +70,7 @@ export class StagehandClient {
     try {
       await page.goto(url, {
         waitUntil: 'networkidle',
-        timeout: config.browserbaseTimeout,
+        timeoutMs: config.browserbaseTimeout,
       });
       
       // Wait a bit for any dynamic content
@@ -90,7 +88,6 @@ export class StagehandClient {
     
     try {
       const screenshot = await page.screenshot({
-        type: 'png',
         fullPage: false,
       });
       
