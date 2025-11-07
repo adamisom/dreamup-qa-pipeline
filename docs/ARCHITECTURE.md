@@ -113,6 +113,21 @@ The DreamUp QA Pipeline is a distributed system that leverages cloud services fo
 
 ## Core Components
 
+### 0. Utility Layer (Refactored)
+
+**Shared Utilities:**
+- **game-id.ts**: Consistent game ID generation (MD5 hash)
+- **http-responses.ts**: Lambda handler response utilities (CORS, success, error)
+- **console-reports.ts**: Safe console report generation with error handling
+- **errors.ts**: Consistent error message extraction
+- **timing.ts**: Sleep and duration tracking
+- **validation.ts**: URL validation
+- **results.ts**: Result object creation helpers
+- **screenshots.ts**: Screenshot collection management
+- **retry.ts**: Exponential backoff retry logic
+
+**Design Pattern**: Pure functions and utilities for code reuse and testability.
+
 ### 1. Browser Automation Layer
 
 **Technology Stack:**
@@ -136,51 +151,58 @@ The DreamUp QA Pipeline is a distributed system that leverages cloud services fo
 ### 2. Evidence Capture System
 
 **Screenshot Strategy:**
-- **Debounced Capture**: 500ms cooldown between screenshots
-- **Event-Driven**: Screenshots after key interactions
-- **Interval Fallback**: Every 5 seconds as backup
+- **Debounced Capture**: 500ms cooldown between screenshots (configurable)
+- **Event-Driven**: Screenshots after key interactions (load, post-load)
 - **Immediate S3 Upload**: No in-memory accumulation
+- **Presigned URLs**: 24-hour expiry for external access
+- **Organized Storage**: `{gameId}/{timestamp}/screenshot-{timestamp}.png`
 
-**Console Logging:**
-- **Real-time Capture**: Browser console events
-- **Filtering**: Game-relevant logs only
-- **Categorization**: Errors, warnings, info
-- **Pattern Recognition**: Known game engine signatures
+**Console Logging (ConsoleCapture):**
+- **Real-time Capture**: Browser console events via page.on('console')
+- **Error Capture**: Page errors via page.on('pageerror')
+- **Noise Filtering**: Removes analytics, extensions, favicon messages
+- **Error/Warning Preservation**: All errors and warnings kept regardless of content
+- **Categorization**: Errors, warnings, info, log, debug levels
+- **S3 Upload**: Filtered logs uploaded as JSON with metadata
+- **Report Generation**: Includes error count, warning count, and formatted string
 
 ### 3. LLM Evaluation Engine
 
-**Technology Stack:**
+**Current Implementation (Phase 2):**
+- **SimpleEvaluator**: Heuristic-based evaluation (MVP)
+- **Console Error Detection**: Analyzes console logs for error patterns
+- **Screenshot Validation**: Checks for valid screenshot URLs
+- **Basic Status**: Returns pass/fail/error based on evidence
+
+**Future Implementation (Phase 5):**
 - **Claude 3.5 Sonnet**: Vision analysis model
 - **Vercel AI SDK**: Structured output generation
 - **Zod Schemas**: Type-safe validation
-
-**Evaluation Process:**
-1. **Screenshot Analysis**: Visual inspection of game state
-2. **Structured Scoring**: 0-100 playability score
-3. **Confidence Assessment**: 0-1 confidence in evaluation
-4. **Issue Detection**: Categorized problem identification
-5. **Game Classification**: Engine and genre detection
-
-**Prompt Engineering:**
-- **Conservative Approach**: Avoid false positives
-- **Specific Criteria**: Clear scoring rubric
-- **Context Awareness**: Multiple screenshot analysis
-- **Structured Output**: Zod-validated JSON
+- **Structured Scoring**: 0-100 playability score
+- **Confidence Assessment**: 0-1 confidence in evaluation
+- **Issue Detection**: Categorized problem identification
+- **Game Classification**: Engine and genre detection
 
 ### 4. Storage & Artifact Management
 
 **S3 Organization:**
 ```
 s3://dreamup-qa-results/
-├── {gameId}/                    # MD5 hash of game URL
+├── {gameId}/                    # MD5 hash of game URL (via generateGameId utility)
 │   ├── {timestamp}/             # ISO 8601 timestamp
-│   │   ├── screenshot-001.png   # Timestamped screenshots
-│   │   ├── screenshot-002.png
-│   │   ├── console-logs.json    # Structured log data
-│   │   └── qa-report.json       # Final evaluation
+│   │   ├── screenshot-{ms}.png  # Timestamped screenshots
+│   │   ├── screenshot-{ms}.png
+│   │   ├── console-logs.json    # Structured log data (ConsoleReport)
+│   │   └── qa-report.json       # Final evaluation (future)
 │   └── {timestamp2}/
 └── {gameId2}/
 ```
+
+**Key Implementation Details:**
+- **Game ID Generation**: Consistent MD5 hash via `generateGameId()` utility
+- **Screenshot Keys**: Generated via `S3StorageClient.generateScreenshotKey()`
+- **Console Logs**: Uploaded via `S3StorageClient.uploadLogs()` with retry logic
+- **Presigned URLs**: 24-hour expiry for all artifacts
 
 **Artifact Types:**
 - **Screenshots**: PNG format, immediate upload
@@ -205,16 +227,20 @@ S3_BUCKET_NAME=xxx
 AWS_REGION=xxx
 
 # Optional (with defaults)
-MAX_TEST_DURATION=270000
-SCREENSHOT_DEBOUNCE=500
-MAX_RETRIES=3
+MAX_TEST_DURATION=270000  # 4.5 minutes
+SCREENSHOT_DEBOUNCE=500   # milliseconds
+BROWSERBASE_TIMEOUT=60000 # milliseconds
+
+# AWS Credentials (optional if using IAM roles)
+AWS_ACCESS_KEY_ID=xxx
+AWS_SECRET_ACCESS_KEY=xxx
 ```
 
 **Runtime Configuration:**
-- **Zod Validation**: Type-safe config loading
+- **Config Class**: Type-safe config loading via `Config.load()`
+- **Validation**: `Config.validate()` checks required env vars
 - **Defaults**: Sensible fallback values
-- **Feature Flags**: Toggle advanced features
-- **Timeout Settings**: Configurable API timeouts
+- **Environment Access**: `Config.getEnv()` for direct access
 
 ## Data Flow Architecture
 
@@ -222,36 +248,36 @@ MAX_RETRIES=3
 
 ```typescript
 // 1. Input Validation
-const gameUrl = validateGameUrl(input.url);
+const gameUrl = validateGameUrl(input.url); // isValidUrl() utility
 
 // 2. Session Initialization  
-const browserSession = await initializeBrowser(gameUrl);
-const screenshotManager = new ScreenshotManager(s3Client);
-const consoleCapture = new ConsoleCapture();
+const stagehandClient = new StagehandClient();
+await stagehandClient.initialize();
+const screenshotManager = new ScreenshotManager(stagehandClient, gameUrl);
+const consoleCapture = new ConsoleCapture(stagehandClient, gameUrl);
+await consoleCapture.startCapturing();
 
-// 3. Game Testing
-const interactions = await performGameInteractions(browserSession);
-const screenshots = await screenshotManager.getScreenshots();
-const consoleLogs = await consoleCapture.generateReport();
+// 3. Game Loading
+const gameLoader = new GameLoader(stagehandClient, screenshotManager);
+const loadResult = await gameLoader.loadGame(gameUrl);
 
-// 4. LLM Evaluation
-const evaluation = await evaluateWithClaude({
-  screenshots,
-  consoleLogs,
-  interactions
-});
+// 4. Evidence Collection
+const screenshots = new ScreenshotCollection(); // Utility for managing screenshots
+screenshots.add(loadResult.screenshot);
+const consoleLogsUrl = await generateConsoleReportSafely(consoleCapture); // Utility
 
-// 5. Result Assembly
-const qaReport = assembleQAReport({
-  evaluation,
-  screenshots,
-  consoleLogs,
-  metadata: { gameUrl, timestamp, duration }
-});
+// 5. Evaluation (SimpleEvaluator - MVP)
+const evaluator = new SimpleEvaluator();
+const result = evaluator.evaluate(
+  screenshots.getAll(),
+  gameUrl,
+  duration.elapsed(),
+  consoleCapture.getLogsAsString()
+);
 
-// 6. Storage & Response
-await uploadQAReport(qaReport);
-return qaReport;
+// 6. Result Assembly
+result.consoleLogsUrl = consoleLogsUrl; // Add console logs URL
+return result; // BasicQAResult with status, screenshots, consoleLogsUrl
 ```
 
 ### Memory Management Strategy
@@ -364,14 +390,25 @@ Developer Machine
 
 ### Lambda Production
 ```
-AWS Lambda Function
-├── Handler (compiled JS)
+AWS Lambda Function (handler.ts)
+├── Handler Function
+│   ├── CORS Headers (via http-responses utility)
+│   ├── Request Validation
+│   ├── Error Handling (via http-responses utility)
+│   └── QA Test Execution (runQATest)
 ├── Dependencies (bundled)
 ├── Environment Variables (encrypted)
 └── IAM Role
-    ├── S3 Permissions
+    ├── S3 Permissions (read/write)
     └── CloudWatch Logs
 ```
+
+**Handler Implementation:**
+- **API Gateway Integration**: Handles POST requests with JSON body
+- **CORS Support**: Preflight (OPTIONS) and actual requests
+- **Error Responses**: Structured error responses with proper HTTP status codes
+- **Request Validation**: Validates gameUrl in request body
+- **Response Formatting**: Consistent JSON responses via http-responses utilities
 
 ### External Services
 ```

@@ -4,12 +4,64 @@
 
 ## Core Schemas
 
-### QA Report Schema
+### Basic QA Result Schema (Implemented)
 
-**Main output structure for all game evaluations:**
+**Current MVP output structure:**
+
+```typescript
+export interface BasicQAResult {
+  status: 'pass' | 'fail' | 'error';
+  gameUrl: string;
+  screenshots: Screenshot[];
+  duration: number; // milliseconds
+  error?: string;
+  consoleLogsUrl?: string; // S3 presigned URL for console logs
+}
+
+export interface Screenshot {
+  s3Url: string; // Presigned URL
+  timestamp: string; // ISO 8601
+  trigger: string; // 'initial_load', 'post_load', etc.
+}
+
+export interface LoadResult {
+  success: boolean;
+  screenshot?: Screenshot;
+  error?: string;
+  loadTime: number; // milliseconds
+}
+```
+
+### Console Log Schemas (Implemented)
+
+**Console log capture and reporting:**
+
+```typescript
+export interface ConsoleLog {
+  level: 'log' | 'error' | 'warn' | 'info' | 'debug';
+  message: string;
+  timestamp: string; // ISO 8601
+  stack?: string; // File location if available
+}
+
+export interface ConsoleReport {
+  logs: ConsoleLog[]; // Filtered logs
+  errorCount: number;
+  warningCount: number;
+  totalCount: number;
+  filteredLogs: string; // Combined string for evaluator
+}
+```
+
+### Advanced QA Report Schema (Future)
+
+**Full output structure for enhanced evaluations (Phase 5):**
 
 ```typescript
 import { z } from 'zod';
+
+// Note: This is the future schema for Phase 5 LLM integration
+// Current implementation uses BasicQAResult (see above)
 
 export const QAReportSchema = z.object({
   // Basic metadata

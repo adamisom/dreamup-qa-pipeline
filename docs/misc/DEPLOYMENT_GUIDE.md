@@ -29,10 +29,36 @@ API Gateway (or Direct Invoke)
 The `handler.ts` file is already created in the project root. It handles:
 
 - ✅ API Gateway events (POST requests)
-- ✅ CORS headers for browser access
+- ✅ CORS headers for browser access (via `http-responses` utility)
 - ✅ Request validation (gameUrl required)
 - ✅ Error handling with proper HTTP status codes
 - ✅ JSON parsing and response formatting
+- ✅ OPTIONS preflight requests for CORS
+
+**Implementation Details:**
+```typescript
+// handler.ts uses utilities from src/utils/http-responses.ts:
+// - getCorsHeaders() - Standard CORS headers
+// - createSuccessResponse() - 200 responses
+// - createErrorResponse() - Error responses with status codes
+// - createCorsPreflightResponse() - OPTIONS handling
+
+// Request format:
+POST /qa
+Content-Type: application/json
+{
+  "gameUrl": "https://example.com/game"
+}
+
+// Response format:
+{
+  "status": "pass" | "fail" | "error",
+  "gameUrl": "https://example.com/game",
+  "screenshots": [...],
+  "consoleLogsUrl": "https://...",
+  "duration": 12345
+}
+```
 
 **Usage:**
 ```typescript
