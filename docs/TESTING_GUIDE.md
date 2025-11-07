@@ -6,8 +6,6 @@
 
 **Run these first to verify core functionality before comprehensive testing:**
 
-**Quick verification that core functionality works:**
-
 ### 1. Environment Check
 ```bash
 # Verify environment is configured
